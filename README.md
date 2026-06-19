@@ -20,11 +20,15 @@ eigenen Zahlen, klar visualisiert.
 ## Check-in: eine Frage pro Screen
 
 Der Morgen-Check-in führt **eine Frage pro Screen** durch alle Bereiche – große
-Typografie, viel Weißraum. Skala/Auswahl/Toggle blenden nach dem Tippen sanft
-zur nächsten Frage (Auto-Advance mit Cross-Fade); Zähler, Mehrfachauswahl und
-Freitext gehen per **„Weiter"**. Zurück-Navigation, Überspringen und ein
-dezenter Fortschrittsbalken sind dabei; `prefers-reduced-motion` wird respektiert
-(dann sofortiger statt animierter Wechsel).
+Typografie (Display-Font **Barrio**, lokal gebündelt), handgezeichnete Doodle-
+Illustrationen und ein **farbiger Vollbild-Hintergrund je Sektion** für
+Abwechslung. Skala/Auswahl/Toggle blenden nach dem Tippen sanft zur nächsten
+Frage (Auto-Advance mit Cross-Fade); Zähler, Mehrfachauswahl und Freitext gehen
+per zentralem Weiter-Button. Eine **Subnavigation unten** zeigt den vorherigen
+(links), aktuellen (Mitte) und nächsten Schritt (rechts). `prefers-reduced-motion`
+wird respektiert (sofortiger statt animierter Wechsel).
+
+Ein Tag lässt sich auf dem Startscreen wieder **löschen** (mit Rückfrage).
 
 ## Bereiche
 

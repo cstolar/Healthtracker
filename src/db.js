@@ -23,6 +23,10 @@ export async function getAllEntries() {
   return db.entries.orderBy('date').toArray()
 }
 
+export async function deleteEntry(date) {
+  await db.entries.delete(date)
+}
+
 export async function getSetting(key, fallback) {
   const row = await db.settings.get(key)
   return row ? row.value : fallback

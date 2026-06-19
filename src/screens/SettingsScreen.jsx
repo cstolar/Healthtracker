@@ -10,6 +10,11 @@ const ACCENTS = [
   { id: 'sky', label: 'Himmel', color: '#6c8ebf' },
   { id: 'plum', label: 'Pflaume', color: '#9b7da3' },
   { id: 'slate', label: 'Schiefer', color: '#8a8f98' },
+  { id: 'coral', label: 'Koralle', color: '#e57b6a' },
+  { id: 'teal', label: 'Petrol', color: '#4f9d9a' },
+  { id: 'amber', label: 'Bernstein', color: '#d9a441' },
+  { id: 'rose', label: 'Rosé', color: '#cf7393' },
+  { id: 'indigo', label: 'Indigo', color: '#6d72c4' },
 ]
 
 const THEMES = [
