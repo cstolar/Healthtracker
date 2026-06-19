@@ -2,8 +2,13 @@ import { defineConfig } from 'vite'
 import react from '@vitejs/plugin-react'
 import { VitePWA } from 'vite-plugin-pwa'
 
+// Basis-Pfad: auf GitHub Pages liegt die App unter /healthtracker/.
+// Lokal (npm run dev/preview) unter '/'. Per BASE_PATH überschreibbar.
+const BASE = process.env.BASE_PATH || (process.env.NODE_ENV === 'production' ? '/healthtracker/' : '/')
+
 // Reine Frontend-PWA: keine externen Requests, alles lokal.
 export default defineConfig({
+  base: BASE,
   plugins: [
     react(),
     VitePWA({
@@ -17,8 +22,8 @@ export default defineConfig({
         background_color: '#0e0e10',
         display: 'standalone',
         orientation: 'portrait',
-        start_url: '/',
-        scope: '/',
+        start_url: BASE,
+        scope: BASE,
         lang: 'de',
         icons: [
           { src: 'icon-192.png', sizes: '192x192', type: 'image/png' },
@@ -29,7 +34,7 @@ export default defineConfig({
       workbox: {
         // Alles vorab cachen -> sofort offline verfügbar. Keine Netzwerk-Strategien nötig.
         globPatterns: ['**/*.{js,css,html,svg,png,ico,woff2}'],
-        navigateFallback: '/index.html'
+        navigateFallback: BASE + 'index.html'
       },
       devOptions: {
         enabled: false
