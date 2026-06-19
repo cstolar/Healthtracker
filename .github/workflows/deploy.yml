@@ -31,8 +31,9 @@ jobs:
       - run: npm ci
       - name: Build
         env:
-          # Pfad muss zum Repo-Namen passen: https://<user>.github.io/healthtracker/
-          BASE_PATH: /healthtracker/
+          # Pfad muss exakt (case-sensitive!) zum Repo-Namen passen:
+          # https://<user>.github.io/Healthtracker/
+          BASE_PATH: /Healthtracker/
         run: npm run build
       - uses: actions/upload-pages-artifact@v3
         with:
