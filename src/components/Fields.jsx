@@ -7,6 +7,8 @@ function WhenTag({ when }) {
 }
 
 function Label({ field }) {
+  // Im Frage-pro-Screen-Modus trägt der Screen selbst die große Überschrift.
+  if (field.hideLabel) return null
   return (
     <div className="field-label">
       <span className="field-label-text">{field.label}</span>
@@ -16,14 +18,16 @@ function Label({ field }) {
   )
 }
 
-// --- Skala 1..max (Tap) -----------------------------------------------------
+// --- Skala min..max (Tap) ---------------------------------------------------
 function ScaleField({ field, value, onChange }) {
-  const steps = Array.from({ length: field.max }, (_, i) => i + 1)
+  const min = field.min ?? 1
+  const steps = Array.from({ length: field.max - min + 1 }, (_, i) => i + min)
   const active = value
+  const wrap = steps.length > 6 // z.B. 0–10 bricht in zwei Reihen um
   return (
     <div className="field">
       <Label field={field} />
-      <div className="scale" role="radiogroup">
+      <div className={`scale ${wrap ? 'scale-wrap' : ''}`} role="radiogroup">
         {steps.map((s) => (
           <button
             key={s}
@@ -146,6 +150,33 @@ function SelectField({ field, value, onChange }) {
   )
 }
 
+// --- Mehrfachauswahl --------------------------------------------------------
+function MultiSelectField({ field, value, onChange }) {
+  const selected = Array.isArray(value) ? value : []
+  function toggle(v) {
+    const next = selected.includes(v) ? selected.filter((x) => x !== v) : [...selected, v]
+    onChange(next.length ? next : undefined)
+  }
+  return (
+    <div className="field">
+      <Label field={field} />
+      <div className="chips">
+        {field.options.map((o) => (
+          <button
+            key={o.value}
+            type="button"
+            className={`chip ${selected.includes(o.value) ? 'on' : ''}`}
+            aria-pressed={selected.includes(o.value)}
+            onClick={() => toggle(o.value)}
+          >
+            {o.label}
+          </button>
+        ))}
+      </div>
+    </div>
+  )
+}
+
 // --- Uhrzeit ----------------------------------------------------------------
 function TimeField({ field, value, onChange }) {
   return (
@@ -249,6 +280,8 @@ export function FieldRenderer({ field, values, onChange }) {
       return <SliderField field={field} value={value} onChange={set} />
     case 'select':
       return <SelectField field={field} value={value} onChange={set} />
+    case 'multiselect':
+      return <MultiSelectField field={field} value={value} onChange={set} />
     case 'time':
       return <TimeField field={field} value={value} onChange={set} />
     case 'number':

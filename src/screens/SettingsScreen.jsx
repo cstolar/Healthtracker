@@ -1,5 +1,5 @@
-import { useRef, useState } from 'react'
-import { getAllEntries, replaceAllEntries } from '../db.js'
+import { useEffect, useRef, useState } from 'react'
+import { getAllEntries, replaceAllEntries, getSetting, setSetting } from '../db.js'
 import { entriesToCSV, entriesToJSON } from '../utils/derive.js'
 import { encryptToEnvelope, decryptEnvelope, isEncryptedEnvelope } from '../utils/crypto.js'
 import { todayISO } from '../utils/date.js'
@@ -30,6 +30,26 @@ export function SettingsScreen({ theme, accent, onTheme, onAccent }) {
   // Import einer verschlüsselten Datei: wartet auf Passwort.
   const [pendingEnvelope, setPendingEnvelope] = useState(null)
   const [importPw, setImportPw] = useState('')
+
+  // Nicht-rauchen: Ausgangsmenge & Preise (für Streak-Ersparnis).
+  const [baseline, setBaseline] = useState(10)
+  const [pricePerPack, setPricePerPack] = useState(8)
+  const [cigsPerPack, setCigsPerPack] = useState(20)
+  useEffect(() => {
+    Promise.all([
+      getSetting('baselineCigsPerDay', 10),
+      getSetting('pricePerPack', 8),
+      getSetting('cigsPerPack', 20),
+    ]).then(([b, p, c]) => {
+      setBaseline(b)
+      setPricePerPack(p)
+      setCigsPerPack(c)
+    })
+  }, [])
+  function saveSmoke(key, value, setter) {
+    setter(value)
+    if (value !== '' && !Number.isNaN(value)) setSetting(key, value)
+  }
 
   async function download(filename, text, type) {
     const blob = new Blob([text], { type })
@@ -226,6 +246,53 @@ export function SettingsScreen({ theme, accent, onTheme, onAccent }) {
           )}
 
           {importMsg && <p className="import-msg">{importMsg}</p>}
+        </div>
+      </section>
+
+      <section className="card">
+        <h2 className="card-title">Nicht rauchen</h2>
+        <p className="card-intro">
+          Damit Tagwerk deine rauchfreie Serie und das gesparte Geld berechnen kann.
+        </p>
+        <div className="setting-row">
+          <label className="setting-label">Früher pro Tag</label>
+          <div className="number-row">
+            <input
+              type="number"
+              inputMode="numeric"
+              className="text-input number-input"
+              value={baseline}
+              onChange={(e) => saveSmoke('baselineCigsPerDay', Number(e.target.value), setBaseline)}
+            />
+            <span className="counter-unit">Zig.</span>
+          </div>
+        </div>
+        <div className="setting-row">
+          <label className="setting-label">Preis pro Schachtel</label>
+          <div className="number-row">
+            <input
+              type="number"
+              inputMode="decimal"
+              step="0.10"
+              className="text-input number-input"
+              value={pricePerPack}
+              onChange={(e) => saveSmoke('pricePerPack', Number(e.target.value), setPricePerPack)}
+            />
+            <span className="counter-unit">€</span>
+          </div>
+        </div>
+        <div className="setting-row">
+          <label className="setting-label">Zigaretten pro Schachtel</label>
+          <div className="number-row">
+            <input
+              type="number"
+              inputMode="numeric"
+              className="text-input number-input"
+              value={cigsPerPack}
+              onChange={(e) => saveSmoke('cigsPerPack', Number(e.target.value), setCigsPerPack)}
+            />
+            <span className="counter-unit">Stk.</span>
+          </div>
         </div>
       </section>
 

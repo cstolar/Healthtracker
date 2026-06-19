@@ -1,13 +1,14 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { useLiveQuery } from 'dexie-react-hooks'
 import {
   LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
   ReferenceDot, Legend,
 } from 'recharts'
-import { getAllEntries } from '../db.js'
-import { METRIC_FIELDS, getField } from '../schema.js'
+import { getAllEntries, getSetting } from '../db.js'
+import { getField } from '../schema.js'
 import {
   ehsSeries, metricSeries, noPornStreak, smokeFreeStreak, weeklySummary,
+  longestSmokeFreeStreak, moneySaved, nonSmokedTotal, triggerFrequency, cravingSeries,
 } from '../utils/derive.js'
 import { addDays, todayISO } from '../utils/date.js'
 
@@ -18,6 +19,16 @@ const RANGES = [
 
 export function TrendsScreen() {
   const [range, setRange] = useState('week')
+  const [smokeCfg, setSmokeCfg] = useState({ baseline: 10, pricePerCig: 8 / 20 })
+  useEffect(() => {
+    Promise.all([
+      getSetting('baselineCigsPerDay', 10),
+      getSetting('pricePerPack', 8),
+      getSetting('cigsPerPack', 20),
+    ]).then(([baseline, pack, perPack]) =>
+      setSmokeCfg({ baseline, pricePerCig: pack / (perPack || 20) })
+    )
+  }, [])
   const entries = useLiveQuery(() => getAllEntries(), [], null)
   if (entries === null) return <div className="screen" />
 
@@ -28,7 +39,6 @@ export function TrendsScreen() {
   const sensitivity = metricSeries(entries, getField('glansSensitivity'), fromIso)
   const summary = weeklySummary(entries, fromIso)
   const npStreak = noPornStreak(entries)
-  const sfStreak = smokeFreeStreak(entries)
 
   const hasData = entries.some((e) => Object.keys(e.values || {}).length)
 
@@ -53,17 +63,18 @@ export function TrendsScreen() {
         <p className="empty-hint">Noch keine Daten. Trag ein paar Tage ein – dann erscheinen hier deine Verläufe.</p>
       ) : (
         <>
-          {/* Streaks */}
-          <div className="streak-cards">
-            <div className="streak-card">
-              <span className="streak-card-num">{npStreak}</span>
-              <span className="streak-card-label">Tage kein Porno</span>
+          {/* Nicht rauchen */}
+          <SmokeSection entries={entries} fromIso={fromIso} cfg={smokeCfg} />
+
+          {/* Sexuelle Gesundheit – Kein-Porno-Serie */}
+          {npStreak > 0 && (
+            <div className="streak-cards">
+              <div className="streak-card">
+                <span className="streak-card-num">{npStreak}</span>
+                <span className="streak-card-label">Tage kein Porno</span>
+              </div>
             </div>
-            <div className="streak-card">
-              <span className="streak-card-num">{sfStreak}</span>
-              <span className="streak-card-label">Tage rauchfrei</span>
-            </div>
-          </div>
+          )}
 
           {/* EHS 3-Linien – zentraler Lese-Indikator */}
           <ChartCard
@@ -161,6 +172,122 @@ function MoreMetrics({ entries, fromIso }) {
         )
       })}
     </ChartCard>
+  )
+}
+
+function SmokeSection({ entries, fromIso, cfg }) {
+  const craving = cravingSeries(entries, fromIso)
+  const confidence = metricSeries(entries, getField('quitConfidence'), fromIso)
+  const triggers = triggerFrequency(entries, getField('cravingTrigger').options)
+  const current = smokeFreeStreak(entries)
+  const longest = longestSmokeFreeStreak(entries)
+  const saved = moneySaved(entries, cfg.baseline, cfg.pricePerCig)
+  const notSmoked = nonSmokedTotal(entries, cfg.baseline)
+
+  return (
+    <>
+      {/* Motivatoren */}
+      <div className="streak-cards">
+        <div className="streak-card">
+          <span className="streak-card-num">{current}</span>
+          <span className="streak-card-label">Tage rauchfrei</span>
+        </div>
+        <div className="streak-card">
+          <span className="streak-card-num">{longest}</span>
+          <span className="streak-card-label">längste Serie</span>
+        </div>
+      </div>
+      <div className="streak-cards">
+        <div className="streak-card">
+          <span className="streak-card-num">{saved.toFixed(2)} €</span>
+          <span className="streak-card-label">gespart</span>
+        </div>
+        <div className="streak-card">
+          <span className="streak-card-num">{notSmoked}</span>
+          <span className="streak-card-label">Zig. nicht geraucht</span>
+        </div>
+      </div>
+
+      {/* Verlangen mit Konfoundern */}
+      <ChartCard title="Rauchverlangen" subtitle="0–10 · Punkte = viel Alkohol / hoher Stress">
+        <ResponsiveContainer width="100%" height={180}>
+          <LineChart data={craving} margin={{ top: 8, right: 8, left: -20, bottom: 0 }}>
+            <CartesianGrid strokeDasharray="3 3" stroke="var(--grid)" vertical={false} />
+            <XAxis dataKey="label" tick={{ fontSize: 11, fill: 'var(--muted)' }} />
+            <YAxis domain={[0, 10]} ticks={[0, 2, 4, 6, 8, 10]} tick={{ fontSize: 11, fill: 'var(--muted)' }} />
+            <Tooltip content={<CravingTooltip />} />
+            <Line type="monotone" dataKey="craving" name="Verlangen" stroke="var(--accent)" strokeWidth={2.5} connectNulls dot={{ r: 3 }} />
+            {craving.map((d) =>
+              d.highAlcohol || d.highStress ? (
+                <ReferenceDot
+                  key={d.date}
+                  x={d.label}
+                  y={d.craving}
+                  r={6}
+                  fill="transparent"
+                  stroke={d.highAlcohol ? '#f7768e' : '#e0af68'}
+                  strokeWidth={2}
+                />
+              ) : null
+            )}
+          </LineChart>
+        </ResponsiveContainer>
+        <div className="confounder-legend">
+          <span><i className="dot dot-alcohol" /> viel Alkohol</span>
+          <span><i className="dot dot-stress" /> hoher Stress</span>
+        </div>
+      </ChartCard>
+
+      {/* Zuversicht */}
+      <ChartCard title="Zuversicht" subtitle="rauchfrei zu bleiben · 1–5">
+        <ResponsiveContainer width="100%" height={150}>
+          <LineChart data={confidence} margin={{ top: 8, right: 8, left: -20, bottom: 0 }}>
+            <CartesianGrid strokeDasharray="3 3" stroke="var(--grid)" vertical={false} />
+            <XAxis dataKey="label" tick={{ fontSize: 11, fill: 'var(--muted)' }} />
+            <YAxis domain={[1, 5]} ticks={[1, 2, 3, 4, 5]} tick={{ fontSize: 11, fill: 'var(--muted)' }} />
+            <Tooltip />
+            <Line type="monotone" dataKey="value" name="Zuversicht" stroke="var(--accent)" strokeWidth={2.5} connectNulls dot={{ r: 3 }} />
+          </LineChart>
+        </ResponsiveContainer>
+      </ChartCard>
+
+      {/* Auslöser-Häufigkeit */}
+      {triggers.length > 0 && (
+        <ChartCard title="Häufigste Auslöser" subtitle="wann das Verlangen am stärksten war">
+          <TriggerBars triggers={triggers} />
+        </ChartCard>
+      )}
+    </>
+  )
+}
+
+function TriggerBars({ triggers }) {
+  const max = Math.max(...triggers.map((t) => t.count), 1)
+  return (
+    <div className="trigger-bars">
+      {triggers.map((t) => (
+        <div key={t.value} className="trigger-row">
+          <span className="trigger-label">{t.label}</span>
+          <div className="trigger-track">
+            <div className="trigger-fill" style={{ width: `${(t.count / max) * 100}%` }} />
+          </div>
+          <span className="trigger-count">{t.count}</span>
+        </div>
+      ))}
+    </div>
+  )
+}
+
+function CravingTooltip({ active, payload, label }) {
+  if (!active || !payload?.length) return null
+  const d = payload[0]?.payload || {}
+  return (
+    <div className="tooltip">
+      <div className="tooltip-date">{label}</div>
+      <div style={{ color: 'var(--accent)' }}>Verlangen: {d.craving}</div>
+      {d.highAlcohol && <div className="tooltip-flag">⚠︎ viel Alkohol</div>}
+      {d.highStress && <div className="tooltip-flag">⚠︎ hoher Stress</div>}
+    </div>
   )
 }
 

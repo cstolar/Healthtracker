@@ -63,6 +63,71 @@ export function smokeFreeStreak(entries) {
   return streak(entries, (e) => (e.values?.cigarettes || 0) === 0, { breakOnMissing: false })
 }
 
+// Längste rauchfreie Serie aller Zeiten: längste Kette aufeinanderfolgender
+// Kalendertage mit protokollierten 0 Zigaretten.
+export function longestSmokeFreeStreak(entries) {
+  const free = entries
+    .filter((e) => e.values && e.values.cigarettes === 0)
+    .map((e) => e.date)
+    .sort()
+  let best = 0
+  let run = 0
+  let prev = null
+  for (const d of free) {
+    if (prev && addDays(prev, 1) === d) run += 1
+    else run = 1
+    if (run > best) best = run
+    prev = d
+  }
+  return best
+}
+
+// Nicht gerauchte Zigaretten gegenüber einer Ausgangsmenge pro Tag.
+export function nonSmokedTotal(entries, baselinePerDay) {
+  let sum = 0
+  for (const e of entries) {
+    if (!e.values || e.values.cigarettes === undefined) continue
+    sum += Math.max(0, baselinePerDay - (e.values.cigarettes || 0))
+  }
+  return sum
+}
+
+export function moneySaved(entries, baselinePerDay, pricePerCig) {
+  return nonSmokedTotal(entries, baselinePerDay) * pricePerCig
+}
+
+// Häufigkeit der Verlangens-Auslöser über alle Tage (für Mustererkennung).
+export function triggerFrequency(entries, options) {
+  const counts = new Map(options.map((o) => [o.value, 0]))
+  for (const e of entries) {
+    const sel = e.values?.cravingTrigger
+    if (!Array.isArray(sel)) continue
+    for (const v of sel) counts.set(v, (counts.get(v) || 0) + 1)
+  }
+  return options
+    .map((o) => ({ value: o.value, label: o.label, count: counts.get(o.value) || 0 }))
+    .filter((x) => x.count > 0)
+    .sort((a, b) => b.count - a.count)
+}
+
+// Verlangens-Verlauf inkl. Konfounder-Flags (viel Alkohol / hoher Stress).
+export function cravingSeries(entries, fromIso) {
+  const out = []
+  for (const e of entries) {
+    if (fromIso && e.date < fromIso) continue
+    const v = e.values || {}
+    if (v.cravingMax === undefined || v.cravingMax === null) continue
+    out.push({
+      date: e.date,
+      label: formatShort(e.date),
+      craving: Number(v.cravingMax),
+      highAlcohol: (v.alcohol || 0) >= 4,
+      highStress: (v.stress || 0) >= 4,
+    })
+  }
+  return out
+}
+
 // Zeitreihe einer Metrik: [{date, label, value}], nur Tage mit Wert.
 export function metricSeries(entries, field, fromIso) {
   const out = []

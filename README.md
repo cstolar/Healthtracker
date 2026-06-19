@@ -17,10 +17,20 @@ eigenen Zahlen, klar visualisiert.
 - **Deine Daten gehören dir** – Export als CSV und JSON, optional **passwortverschlüsselt**
   (AES-GCM + PBKDF2 via Web Crypto, komplett lokal), Import aus JSON oder verschlüsselter Datei.
 
+## Check-in: eine Frage pro Screen
+
+Der Morgen-Check-in führt **eine Frage pro Screen** durch alle Bereiche – große
+Typografie, viel Weißraum. Skala/Auswahl/Toggle blenden nach dem Tippen sanft
+zur nächsten Frage (Auto-Advance mit Cross-Fade); Zähler, Mehrfachauswahl und
+Freitext gehen per **„Weiter"**. Zurück-Navigation, Überspringen und ein
+dezenter Fortschrittsbalken sind dabei; `prefers-reduced-motion` wird respektiert
+(dann sofortiger statt animierter Wechsel).
+
 ## Bereiche
 
-Schlaf · Substanzen · Sexuelle Gesundheit (Kernmodul, EHS & Empfindlichkeit) ·
-Bewegung · Stimmung & Stress · Tagesnotiz.
+Schlaf · Substanzen · **Nicht rauchen** (Zigaretten, Verlangen 0–10, Auslöser,
+Zuversicht – mit Streak & gespartem Geld) · Sexuelle Gesundheit (Kernmodul,
+EHS & Empfindlichkeit) · Bewegung · Stimmung & Stress · Tagesnotiz.
 
 Felder sind als **heute** (z.B. Morgenerektion) oder **gestern** (z.B. Sex,
 Substanzen) gekennzeichnet – passend zum morgendlichen Rückblick.
