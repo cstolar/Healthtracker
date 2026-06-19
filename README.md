@@ -14,7 +14,8 @@ eigenen Zahlen, klar visualisiert.
   nutzbar (Service Worker, alles vorab gecacht).
 - **Schnell** – Öffnet direkt auf dem heutigen Check-in. Tap-Skalen, Toggles und
   +/- statt Tippen; automatisches Speichern, kein Speichern-Button.
-- **Deine Daten gehören dir** – Export als CSV und JSON, Import aus JSON.
+- **Deine Daten gehören dir** – Export als CSV und JSON, optional **passwortverschlüsselt**
+  (AES-GCM + PBKDF2 via Web Crypto, komplett lokal), Import aus JSON oder verschlüsselter Datei.
 
 ## Bereiche
 

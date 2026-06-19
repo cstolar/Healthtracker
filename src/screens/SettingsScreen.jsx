@@ -1,6 +1,7 @@
 import { useRef, useState } from 'react'
 import { getAllEntries, replaceAllEntries } from '../db.js'
 import { entriesToCSV, entriesToJSON } from '../utils/derive.js'
+import { encryptToEnvelope, decryptEnvelope, isEncryptedEnvelope } from '../utils/crypto.js'
 import { todayISO } from '../utils/date.js'
 
 const ACCENTS = [
@@ -20,6 +21,15 @@ const THEMES = [
 export function SettingsScreen({ theme, accent, onTheme, onAccent }) {
   const fileRef = useRef(null)
   const [importMsg, setImportMsg] = useState(null)
+
+  // Verschlüsselter Export: Passwort-Panel.
+  const [showEncExport, setShowEncExport] = useState(false)
+  const [exportPw, setExportPw] = useState('')
+  const [exportPw2, setExportPw2] = useState('')
+
+  // Import einer verschlüsselten Datei: wartet auf Passwort.
+  const [pendingEnvelope, setPendingEnvelope] = useState(null)
+  const [importPw, setImportPw] = useState('')
 
   async function download(filename, text, type) {
     const blob = new Blob([text], { type })
@@ -41,23 +51,66 @@ export function SettingsScreen({ theme, accent, onTheme, onAccent }) {
     download(`tagwerk-${todayISO()}.csv`, entriesToCSV(entries), 'text/csv')
   }
 
+  async function exportEncrypted() {
+    if (exportPw.length < 4) {
+      setImportMsg('Bitte ein Passwort mit mindestens 4 Zeichen wählen.')
+      return
+    }
+    if (exportPw !== exportPw2) {
+      setImportMsg('Die Passwörter stimmen nicht überein.')
+      return
+    }
+    const entries = await getAllEntries()
+    const payload = { app: 'tagwerk', version: 1, exportedAt: new Date().toISOString(), entries }
+    const envelope = await encryptToEnvelope(payload, exportPw)
+    download(`tagwerk-${todayISO()}.tagwerk.json`, envelope, 'application/json')
+    setShowEncExport(false)
+    setExportPw('')
+    setExportPw2('')
+    setImportMsg('Verschlüsselte Datei exportiert. Bewahre das Passwort gut auf – ohne geht nichts mehr.')
+  }
+
+  // Gemeinsamer Schreibpfad für ent-/verschlüsselte Backups.
+  async function applyPayload(data) {
+    const entries = Array.isArray(data) ? data : data.entries
+    if (!Array.isArray(entries)) throw new Error('Kein gültiges Tagwerk-Backup.')
+    const clean = entries
+      .filter((x) => x && typeof x.date === 'string')
+      .map((x) => ({ date: x.date, values: x.values || {}, updatedAt: x.updatedAt || Date.now() }))
+    await replaceAllEntries(clean)
+    return clean.length
+  }
+
   async function handleImport(e) {
     const file = e.target.files?.[0]
     if (!file) return
     try {
-      const text = await file.text()
-      const data = JSON.parse(text)
-      const entries = Array.isArray(data) ? data : data.entries
-      if (!Array.isArray(entries)) throw new Error('Kein gültiges Tagwerk-Backup.')
-      const clean = entries
-        .filter((x) => x && typeof x.date === 'string')
-        .map((x) => ({ date: x.date, values: x.values || {}, updatedAt: x.updatedAt || Date.now() }))
-      await replaceAllEntries(clean)
-      setImportMsg(`${clean.length} Tage importiert.`)
+      const data = JSON.parse(await file.text())
+      if (isEncryptedEnvelope(data)) {
+        // Verschlüsselt: Passwort erfragen, Import danach fortsetzen.
+        setPendingEnvelope(data)
+        setImportPw('')
+        setImportMsg(null)
+        return
+      }
+      const n = await applyPayload(data)
+      setImportMsg(`${n} Tage importiert.`)
     } catch (err) {
       setImportMsg('Import fehlgeschlagen: ' + err.message)
     } finally {
       e.target.value = ''
+    }
+  }
+
+  async function confirmDecryptImport() {
+    try {
+      const data = await decryptEnvelope(pendingEnvelope, importPw)
+      const n = await applyPayload(data)
+      setPendingEnvelope(null)
+      setImportPw('')
+      setImportMsg(`${n} Tage entschlüsselt und importiert.`)
+    } catch (err) {
+      setImportMsg(err.message)
     }
   }
 
@@ -101,10 +154,77 @@ export function SettingsScreen({ theme, accent, onTheme, onAccent }) {
         <div className="btn-col">
           <button className="btn" onClick={exportCSV}>Als CSV exportieren</button>
           <button className="btn" onClick={exportJSON}>Als JSON exportieren</button>
+
+          {!showEncExport ? (
+            <button className="btn" onClick={() => { setShowEncExport(true); setImportMsg(null) }}>
+              🔒 Verschlüsselt exportieren
+            </button>
+          ) : (
+            <div className="pw-panel">
+              <p className="pw-hint">Passwort wählen. Es schützt die Datei und lässt sich nicht wiederherstellen.</p>
+              <input
+                type="password"
+                className="text-input"
+                placeholder="Passwort"
+                autoComplete="new-password"
+                value={exportPw}
+                onChange={(e) => setExportPw(e.target.value)}
+              />
+              <input
+                type="password"
+                className="text-input"
+                placeholder="Passwort wiederholen"
+                autoComplete="new-password"
+                value={exportPw2}
+                onChange={(e) => setExportPw2(e.target.value)}
+              />
+              <div className="pw-actions">
+                <button className="btn" onClick={exportEncrypted}>Verschlüsseln & speichern</button>
+                <button
+                  className="btn btn-ghost"
+                  onClick={() => { setShowEncExport(false); setExportPw(''); setExportPw2('') }}
+                >
+                  Abbrechen
+                </button>
+              </div>
+            </div>
+          )}
+
           <button className="btn btn-ghost" onClick={() => fileRef.current?.click()}>
-            Aus JSON importieren
+            Importieren (JSON oder verschlüsselt)
           </button>
-          <input ref={fileRef} type="file" accept="application/json,.json" hidden onChange={handleImport} />
+          <input
+            ref={fileRef}
+            type="file"
+            accept="application/json,.json"
+            hidden
+            onChange={handleImport}
+          />
+
+          {pendingEnvelope && (
+            <div className="pw-panel">
+              <p className="pw-hint">🔒 Verschlüsselte Datei erkannt. Passwort eingeben, um sie zu importieren.</p>
+              <input
+                type="password"
+                className="text-input"
+                placeholder="Passwort"
+                autoComplete="current-password"
+                value={importPw}
+                onChange={(e) => setImportPw(e.target.value)}
+                onKeyDown={(e) => e.key === 'Enter' && confirmDecryptImport()}
+              />
+              <div className="pw-actions">
+                <button className="btn" onClick={confirmDecryptImport}>Entschlüsseln & importieren</button>
+                <button
+                  className="btn btn-ghost"
+                  onClick={() => { setPendingEnvelope(null); setImportPw('') }}
+                >
+                  Abbrechen
+                </button>
+              </div>
+            </div>
+          )}
+
           {importMsg && <p className="import-msg">{importMsg}</p>}
         </div>
       </section>

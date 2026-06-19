@@ -583,4 +583,16 @@ input, textarea {
 .btn-ghost { background: var(--field-bg); color: var(--ink); }
 .import-msg { font-size: 13.5px; color: var(--ink-soft); margin: 4px 2px 0; }
 
+.pw-panel {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  background: var(--field-bg);
+  border-radius: 14px;
+  padding: 16px;
+}
+.pw-hint { font-size: 13px; color: var(--ink-soft); margin: 0; line-height: 1.5; }
+.pw-actions { display: flex; gap: 10px; }
+.pw-actions .btn { min-height: 46px; }
+
 .recharts-wrapper { font-family: var(--font); }
