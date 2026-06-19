@@ -6,7 +6,6 @@ on:
   push:
     branches:
       - main
-      - claude/health-tracking-pwa-ulddw8
   workflow_dispatch:
 
 permissions:
