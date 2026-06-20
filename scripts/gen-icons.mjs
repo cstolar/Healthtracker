@@ -1,86 +1,51 @@
-// Erzeugt einfache PNG-App-Icons ohne externe Tools.
-// Ruhiges Motiv: dunkler Grund, weicher Akzent-Kreis (aufgehende Sonne).
-import zlib from 'node:zlib'
-import { writeFileSync, mkdirSync } from 'node:fs'
+// Erzeugt die App-Icons aus der Sonnenaufgang-Doodle des Flow-Starts.
+// Navy Grund + warmes Gelb, zentriert. Rasterisierung via sharp.
+import sharp from 'sharp'
+import { mkdirSync } from 'node:fs'
 
-mkdirSync(new URL('../public', import.meta.url), { recursive: true })
+const OUT = new URL('../public/', import.meta.url)
+mkdirSync(OUT, { recursive: true })
 
-function crc32(buf) {
-  let c = ~0
-  for (let i = 0; i < buf.length; i++) {
-    c ^= buf[i]
-    for (let k = 0; k < 8; k++) c = c & 1 ? (c >>> 1) ^ 0xedb88320 : c >>> 1
-  }
-  return ~c >>> 0
+const BG = '#16243a'
+const INK = '#ffd27a'
+
+// Motiv im 120er-Koordinatensystem (identisch zur Dawn-Illustration im Flow).
+const MOTIF = `
+  <path d="M18 84 q14 -3 28 -2 q14 1 28 0 q14 -1 28 1" />
+  <path d="M40 84 a20 20 0 0 1 40 0" />
+  <path d="M60 40 v-12 M82 48 l9 -9 M38 48 l-9 -9 M94 70 h13 M26 70 H13" />
+`
+// Motiv-Grenzen -> Mittelpunkt (60,57), Breite 94.
+const MOTIF_CX = 60
+const MOTIF_CY = 57
+const MOTIF_W = 94
+
+function svg(size, frac, bg = BG) {
+  const scale = (size * frac) / MOTIF_W
+  const sw = 3 // im 120er-Raum; skaliert mit
+  const bgRect = bg ? `<rect width="${size}" height="${size}" fill="${bg}"/>` : ''
+  return `<svg xmlns="http://www.w3.org/2000/svg" width="${size}" height="${size}" viewBox="0 0 ${size} ${size}">
+    ${bgRect}
+    <g transform="translate(${size / 2},${size / 2}) scale(${scale}) translate(${-MOTIF_CX},${-MOTIF_CY})"
+       fill="none" stroke="${INK}" stroke-width="${sw}" stroke-linecap="round" stroke-linejoin="round">
+      ${MOTIF}
+    </g>
+  </svg>`
 }
 
-function chunk(type, data) {
-  const len = Buffer.alloc(4)
-  len.writeUInt32BE(data.length, 0)
-  const typeBuf = Buffer.from(type, 'ascii')
-  const crc = Buffer.alloc(4)
-  crc.writeUInt32BE(crc32(Buffer.concat([typeBuf, data])), 0)
-  return Buffer.concat([len, typeBuf, data, crc])
+async function png(name, size, frac, bg = BG) {
+  await sharp(Buffer.from(svg(size, frac, bg))).png().toFile(new URL(name, OUT).pathname)
+  console.log('•', name)
 }
 
-function png(size, draw) {
-  const px = Buffer.alloc(size * size * 4)
-  for (let y = 0; y < size; y++) {
-    for (let x = 0; x < size; x++) {
-      const [r, g, b, a] = draw(x, y)
-      const o = (y * size + x) * 4
-      px[o] = r; px[o + 1] = g; px[o + 2] = b; px[o + 3] = a
-    }
-  }
-  // Filter-Byte 0 pro Zeile.
-  const raw = Buffer.alloc(size * (size * 4 + 1))
-  for (let y = 0; y < size; y++) {
-    raw[y * (size * 4 + 1)] = 0
-    px.copy(raw, y * (size * 4 + 1) + 1, y * size * 4, (y + 1) * size * 4)
-  }
-  const ihdr = Buffer.alloc(13)
-  ihdr.writeUInt32BE(size, 0)
-  ihdr.writeUInt32BE(size, 4)
-  ihdr[8] = 8        // bit depth
-  ihdr[9] = 6        // RGBA
-  const idat = zlib.deflateSync(raw)
-  return Buffer.concat([
-    Buffer.from([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a]),
-    chunk('IHDR', ihdr),
-    chunk('IDAT', idat),
-    chunk('IEND', Buffer.alloc(0)),
-  ])
-}
+// Normale Icons: zentriert mit etwas Rand. Maskable: mehr Sicherheitsabstand.
+await png('icon-192.png', 192, 0.66)
+await png('icon-512.png', 512, 0.66)
+await png('icon-512-maskable.png', 512, 0.52)
+await png('apple-touch-icon.png', 180, 0.62)
 
-const BG = [14, 14, 16]
-const ACCENT = [125, 155, 118]
-
-function makeIcon(size, maskable) {
-  return png(size, (x, y) => {
-    // Akzent-Kreis, leicht nach unten versetzt (Sonnenaufgang).
-    const cx = size * 0.5
-    const cy = size * 0.56
-    const r = size * (maskable ? 0.26 : 0.3)
-    const d = Math.hypot(x - cx, y - cy)
-    if (d < r) {
-      // weicher Rand
-      const edge = Math.min(1, (r - d) / (size * 0.03))
-      return [
-        Math.round(BG[0] + (ACCENT[0] - BG[0]) * edge),
-        Math.round(BG[1] + (ACCENT[1] - BG[1]) * edge),
-        Math.round(BG[2] + (ACCENT[2] - BG[2]) * edge),
-        255,
-      ]
-    }
-    return [...BG, 255]
-  })
-}
-
-const out = (name) => new URL('../public/' + name, import.meta.url)
-
-writeFileSync(out('icon-192.png'), makeIcon(192, false))
-writeFileSync(out('icon-512.png'), makeIcon(512, false))
-writeFileSync(out('icon-512-maskable.png'), makeIcon(512, true))
-writeFileSync(out('apple-touch-icon.png'), makeIcon(180, false))
-
+// Vektor-Favicon
+import { writeFileSync } from 'node:fs'
+writeFileSync(new URL('favicon.svg', OUT), svg(64, 0.7))
+console.log('• favicon.svg')
 console.log('Icons erzeugt.')
