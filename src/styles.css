@@ -436,20 +436,21 @@ input, textarea {
   border-top: 1px solid var(--line);
   background: color-mix(in srgb, var(--bg) 86%, transparent);
   backdrop-filter: saturate(1.4) blur(14px);
-  padding-bottom: env(safe-area-inset-bottom);
+  /* Safe-Area-Anteil stark gekürzt -> deutlich niedrigere Leiste. */
+  padding-bottom: max(5px, calc(env(safe-area-inset-bottom) * 0.25));
 }
 .tab {
   flex: 1;
-  padding: 5px 0 3px;
+  padding: 8px 0 4px;
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 1px;
+  gap: 2px;
   color: var(--muted);
   transition: color 0.15s;
 }
 .tab.on { color: var(--accent); }
-.tab-icon { font-size: 15px; filter: grayscale(0.25); }
+.tab-icon { font-size: 18px; filter: grayscale(0.25); }
 .tab.on .tab-icon { filter: none; }
 .tab-label { font-size: 9.5px; font-weight: 600; letter-spacing: 0.02em; }
 
