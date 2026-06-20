@@ -3,11 +3,12 @@ import { getSetting, setSetting } from './db.js'
 import { TodayScreen } from './screens/TodayScreen.jsx'
 import { TrendsScreen } from './screens/TrendsScreen.jsx'
 import { SettingsScreen, ACCENTS } from './screens/SettingsScreen.jsx'
+import { Illustration } from './components/Illustration.jsx'
 
 const TABS = [
-  { id: 'today', label: 'Heute', icon: '☀️' },
-  { id: 'trends', label: 'Verlauf', icon: '📈' },
-  { id: 'settings', label: 'Mehr', icon: '⚙️' },
+  { id: 'today', label: 'Heute', ill: 'today' },
+  { id: 'trends', label: 'Verlauf', ill: 'history' },
+  { id: 'settings', label: 'Mehr', ill: 'more' },
 ]
 
 export default function App() {
@@ -68,7 +69,7 @@ export default function App() {
             className={`tab ${tab === t.id ? 'on' : ''}`}
             onClick={() => setTab(t.id)}
           >
-            <span className="tab-icon" aria-hidden="true">{t.icon}</span>
+            <Illustration name={t.ill} />
             <span className="tab-label">{t.label}</span>
           </button>
         ))}

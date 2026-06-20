@@ -109,6 +109,32 @@ const ArrowUp = () => (
   </Svg>
 )
 
+// Sonne (Tab „Heute")
+const Sun = () => (
+  <Svg>
+    <circle cx="60" cy="60" r="19" />
+    <path d="M60 22 V11 M60 98 v11 M22 60 H11 M98 60 h11 M33 33 l-8 -8 M87 33 l8 -8 M33 87 l-8 8 M87 87 l8 8" />
+  </Svg>
+)
+
+// Steigende Kurve (Tab „Verlauf")
+const Trend = () => (
+  <Svg>
+    <path d="M24 20 V96 H100" />
+    <path d="M34 78 L52 62 L66 72 L88 40" />
+    <path d="M88 40 l-13 0 M88 40 l0 13" />
+  </Svg>
+)
+
+// Drei Punkte (Tab „Mehr")
+const Dots = () => (
+  <Svg>
+    <circle cx="32" cy="60" r="6.5" />
+    <circle cx="60" cy="60" r="6.5" />
+    <circle cx="88" cy="60" r="6.5" />
+  </Svg>
+)
+
 const MAP = {
   intro: Dawn,
   sleep: Moon,
@@ -120,6 +146,9 @@ const MAP = {
   note: Pen,
   done: Flag,
   arrowup: ArrowUp,
+  today: Sun,
+  history: Trend,
+  more: Dots,
 }
 
 export function Illustration({ name }) {

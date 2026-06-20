@@ -441,17 +441,18 @@ input, textarea {
 }
 .tab {
   flex: 1;
-  padding: 8px 0 4px;
+  padding: 16px 0 5px;
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 2px;
+  gap: 4px;
   color: var(--muted);
   transition: color 0.15s;
 }
 .tab.on { color: var(--accent); }
-.tab-icon { font-size: 18px; filter: grayscale(0.25); }
-.tab.on .tab-icon { filter: none; }
+.tabbar .illustration { width: 34px; height: 34px; margin: 0; color: currentColor; }
+/* Doodle-Linien bei kleiner Darstellung kräftiger (Strich skaliert sonst zu dünn). */
+.tabbar .doodle g, .subnav .doodle g { stroke-width: 7; }
 .tab-label { font-size: 9.5px; font-weight: 600; letter-spacing: 0.02em; }
 
 /* --- Verlauf ------------------------------------------------------------- */
