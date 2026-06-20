@@ -20,7 +20,7 @@ function buildSteps() {
   for (const area of SCHEMA) {
     steps.push({ kind: 'section', areaId: area.id })
     for (const field of area.fields) {
-      if (field.type === 'computed') continue
+      if (field.type === 'computed' || field.subfield) continue
       steps.push({ kind: 'question', areaId: area.id, field })
     }
   }
@@ -314,9 +314,11 @@ function IntroScreen({ date, setDate, npStreak, sfStreak, hasData, onDelete }) {
 
 // --- Eine Frage -------------------------------------------------------------
 function QuestionScreen({ areaId, field, values, onChange }) {
+  // Große Steuerelemente (z.B. Schlaf-Zifferblatt) brauchen den Platz selbst.
+  const bigControl = field.type === 'sleepwindow'
   return (
     <div className="question-screen">
-      <Illustration name={areaId} />
+      {!bigControl && <Illustration name={areaId} />}
       <div className="question-head">
         {field.when && (
           <span className={`when when-${field.when}`}>{field.when === 'today' ? 'heute' : 'gestern'}</span>

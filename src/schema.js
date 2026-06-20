@@ -44,8 +44,16 @@ export const SCHEMA = [
     emoji: '🌙',
     intro: 'Wie war die Nacht?',
     fields: [
-      { id: 'bedtime', type: 'time', label: 'Bettzeit', when: 'yesterday' },
-      { id: 'waketime', type: 'time', label: 'Aufwachzeit', when: 'today' },
+      {
+        id: 'sleepWindow',
+        type: 'sleepwindow',
+        label: 'Schlaffenster',
+        hint: 'Zieh Mond und Wecker auf deine Zeiten.',
+      },
+      // bedtime/waketime werden vom Schlaffenster gesetzt – keine eigenen Fragen,
+      // aber als Felder erhalten für Schlafdauer-Berechnung und Export.
+      { id: 'bedtime', type: 'time', label: 'Bettzeit', when: 'yesterday', subfield: true },
+      { id: 'waketime', type: 'time', label: 'Aufwachzeit', when: 'today', subfield: true },
       {
         id: 'sleepDuration',
         type: 'computed',

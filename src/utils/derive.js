@@ -204,8 +204,8 @@ export function entriesToJSON(entries) {
 }
 
 export function entriesToCSV(entries) {
-  // Spalten: date + alle (nicht berechneten) Feld-IDs + berechnete Felder.
-  const cols = ['date', ...ALL_FIELDS.map((f) => f.id)]
+  // Spalten: date + alle Feld-IDs (ohne reine UI-Felder wie das Schlaffenster).
+  const cols = ['date', ...ALL_FIELDS.filter((f) => f.type !== 'sleepwindow').map((f) => f.id)]
   const header = cols.join(',')
   const rows = entries.map((e) => {
     return cols

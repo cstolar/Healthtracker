@@ -1,4 +1,5 @@
 import { durationHours } from '../schema.js'
+import { SleepDial } from './SleepDial.jsx'
 
 // Zeitbezug-Pille ("heute" / "gestern").
 function WhenTag({ when }) {
@@ -267,6 +268,15 @@ function ComputedField({ field, values }) {
 export function FieldRenderer({ field, values, onChange }) {
   // Abhängige Felder ausblenden.
   if (field.showIf && !field.showIf(values)) return null
+  // Schlaffenster verwaltet mehrere Werte (bedtime + waketime) selbst.
+  if (field.type === 'sleepwindow') {
+    return (
+      <div className="field">
+        <Label field={field} />
+        <SleepDial values={values} onChange={onChange} />
+      </div>
+    )
+  }
   const value = values[field.id]
   const set = (v) => onChange(field.id, v)
   switch (field.type) {

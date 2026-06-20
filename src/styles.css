@@ -974,3 +974,55 @@ input, textarea {
 .flow .counter-btn { background: rgba(255, 255, 255, 0.16); color: var(--ink); box-shadow: none; }
 .flow .day-nav-btn { background: var(--field-bg); }
 .flow .scale-desc { background: rgba(255, 255, 255, 0.12); }
+
+/* Schlaf-Zifferblatt (iOS-Weck-Stil) */
+.sleepdial { display: flex; flex-direction: column; align-items: center; gap: 18px; width: 100%; }
+.sleep-times { display: flex; gap: 14px; width: 100%; max-width: 320px; }
+.sleep-time {
+  flex: 1;
+  background: var(--field-bg);
+  border-radius: 14px;
+  padding: 12px 14px;
+  text-align: left;
+}
+.sleep-time-label { display: block; font-size: 11.5px; color: var(--ink-soft); }
+.sleep-time-val {
+  display: block;
+  font-family: var(--font);
+  font-size: 26px;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+  margin-top: 2px;
+}
+.sleepdial-svg {
+  width: 100%;
+  max-width: 300px;
+  aspect-ratio: 1 / 1;
+  touch-action: none;
+}
+.dial-track { fill: rgba(0, 0, 0, 0.22); stroke: rgba(255, 255, 255, 0.10); stroke-width: 30; }
+.dial-arc {
+  fill: none;
+  stroke: var(--accent);
+  stroke-width: 30;
+  stroke-linecap: round;
+  opacity: 0.92;
+}
+.tick { stroke: var(--ink-soft); stroke-width: 1; opacity: 0.45; }
+.tick.major { stroke-width: 2; opacity: 0.75; }
+.dial-hr { fill: var(--ink-soft); font-family: var(--font); font-size: 13px; }
+.handle { cursor: grab; }
+.handle-bg {
+  fill: var(--bg);
+  stroke: var(--accent);
+  stroke-width: 2.5;
+  filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.35));
+}
+.handle-icon { font-size: 19px; }
+.dial-dur {
+  fill: var(--ink);
+  font-family: var(--font);
+  font-size: 21px;
+  font-weight: 700;
+}
+.dial-sub { fill: var(--ink-soft); font-family: var(--font); font-size: 12px; }
