@@ -205,8 +205,6 @@ export function TodayScreen() {
           <IntroScreen
             date={date}
             setDate={setDate}
-            npStreak={npStreak}
-            sfStreak={sfStreak}
             hasData={Object.keys(values).length > 0}
             onDelete={handleDelete}
           />
@@ -234,19 +232,23 @@ export function TodayScreen() {
         )}
       </div>
 
-      {/* Subnavigation: vorheriger · aktueller · nächster Step */}
+      {/* Subnavigation: vorheriger · aktueller · nächster Step (Kapitel-Doodles) */}
       <nav className="subnav">
         <button
           className={`subnav-side left ${hasLeft ? '' : 'hidden'}`}
           onClick={() => hasLeft && go(leftT, 'back')}
           aria-label="Vorheriger Schritt"
         >
-          <span className="subnav-emoji">{stepMeta(steps[leftT]).emoji}</span>
+          <Illustration name={steps[leftT].areaId} />
           <span className="subnav-label">{stepMeta(steps[leftT]).label}</span>
         </button>
 
         <button className="subnav-center" onClick={onCenter} aria-label="Weiter">
-          <span className="subnav-center-glyph">{step.kind === 'done' ? '✓' : '↑'}</span>
+          {step.kind === 'done' ? (
+            <span className="subnav-center-glyph">✓</span>
+          ) : (
+            <Illustration name="arrowup" />
+          )}
           <span className="subnav-center-label">{stepMeta(step).label}</span>
         </button>
 
@@ -255,7 +257,7 @@ export function TodayScreen() {
           onClick={() => hasRight && go(rightT, 'fwd')}
           aria-label="Nächster Schritt"
         >
-          <span className="subnav-emoji">{stepMeta(steps[rightT]).emoji}</span>
+          <Illustration name={steps[rightT].areaId} />
           <span className="subnav-label">{stepMeta(steps[rightT]).label}</span>
         </button>
       </nav>
@@ -264,7 +266,7 @@ export function TodayScreen() {
 }
 
 // --- Intro ------------------------------------------------------------------
-function IntroScreen({ date, setDate, npStreak, sfStreak, hasData, onDelete }) {
+function IntroScreen({ date, setDate, hasData, onDelete }) {
   const isToday = date === todayISO()
   const [confirmDel, setConfirmDel] = useState(false)
   return (
@@ -288,13 +290,6 @@ function IntroScreen({ date, setDate, npStreak, sfStreak, hasData, onDelete }) {
           aria-label="Tag vor"
         >›</button>
       </div>
-
-      {(npStreak > 0 || sfStreak > 0) && (
-        <div className="streak-row">
-          {sfStreak > 0 && <span className="streak-pill">🚭 {sfStreak} Tage rauchfrei</span>}
-          {npStreak > 0 && <span className="streak-pill">🌿 {npStreak} Tage kein Porno</span>}
-        </div>
-      )}
 
       {hasData &&
         (confirmDel ? (

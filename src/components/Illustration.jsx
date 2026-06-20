@@ -101,6 +101,14 @@ const Flag = () => (
   </Svg>
 )
 
+// Pfeil nach oben (aktueller Schritt in der Subnavigation)
+const ArrowUp = () => (
+  <Svg>
+    <path d="M60 94 q-3 -32 -1 -64" />
+    <path d="M36 54 q20 -24 23 -28 q4 4 23 27" />
+  </Svg>
+)
+
 const MAP = {
   intro: Dawn,
   sleep: Moon,
@@ -111,6 +119,7 @@ const MAP = {
   mood: Cloud,
   note: Pen,
   done: Flag,
+  arrowup: ArrowUp,
 }
 
 export function Illustration({ name }) {

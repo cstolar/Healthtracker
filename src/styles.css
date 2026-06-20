@@ -12,9 +12,9 @@
   --serif: var(--display);
 }
 
-/* Zahlen bleiben im klaren System-Font – Barrio nur für Wörter/Titel. */
-.counter-num, .stat-num, .streak-card-num, .done-stat-num,
-.scale-num, .trigger-count, .progress { font-family: var(--font); }
+/* Auf den Karten-Screens (Verlauf/Mehr): Barrio NUR für Zahlen in Karten. */
+.streak-card-num, .stat-num, .done-stat-num { font-family: var(--display); }
+.counter-num, .scale-num, .trigger-count, .progress { font-family: var(--font); }
 
 :root[data-theme='light'] {
   --bg: #faf9f7;
@@ -199,11 +199,11 @@ input, textarea {
 .card-head-text { flex: 1; }
 
 .card-title {
-  font-family: var(--serif);
-  font-size: 21px;
-  font-weight: 600;
+  font-family: var(--font);
+  font-size: 19px;
+  font-weight: 700;
   margin: 0;
-  letter-spacing: -0.01em;
+  letter-spacing: 0;
 }
 
 .card-intro {
@@ -440,18 +440,18 @@ input, textarea {
 }
 .tab {
   flex: 1;
-  padding: 11px 0 9px;
+  padding: 5px 0 3px;
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 3px;
+  gap: 1px;
   color: var(--muted);
   transition: color 0.15s;
 }
 .tab.on { color: var(--accent); }
-.tab-icon { font-size: 19px; filter: grayscale(0.2); }
+.tab-icon { font-size: 15px; filter: grayscale(0.25); }
 .tab.on .tab-icon { filter: none; }
-.tab-label { font-size: 11px; font-weight: 600; letter-spacing: 0.02em; }
+.tab-label { font-size: 9.5px; font-weight: 600; letter-spacing: 0.02em; }
 
 /* --- Verlauf ------------------------------------------------------------- */
 .screen-head {
@@ -464,9 +464,9 @@ input, textarea {
   padding: 8px 4px 0;
 }
 .screen-title {
-  font-family: var(--serif);
-  font-size: 30px;
-  font-weight: 600;
+  font-family: var(--font);
+  font-size: 26px;
+  font-weight: 700;
   margin: 0;
 }
 .range-toggle { max-width: 200px; }
@@ -560,8 +560,9 @@ input, textarea {
 .setting-block { margin-top: 18px; }
 .setting-label { font-size: 14px; color: var(--ink-soft); display: block; margin-bottom: 10px; }
 
-.accent-row { display: flex; gap: 14px; }
+.accent-row { display: flex; flex-wrap: wrap; gap: 14px; }
 .accent-swatch {
+  flex: 0 0 auto;
   width: 38px; height: 38px;
   border-radius: 50%;
   background: var(--swatch);
@@ -934,7 +935,8 @@ input, textarea {
 .subnav-side.left { align-items: flex-start; }
 .subnav-side.right { align-items: flex-end; }
 .subnav-side.hidden { visibility: hidden; }
-.subnav-emoji { font-size: 19px; }
+.subnav .illustration { width: 26px; height: 26px; margin: 0; color: currentColor; }
+.subnav-center .illustration { width: 30px; height: 30px; color: var(--ink); }
 .subnav-label {
   font-size: 11px;
   max-width: 12ch;
