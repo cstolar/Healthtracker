@@ -3,6 +3,7 @@ import { getAllEntries, replaceAllEntries, getSetting, setSetting } from '../db.
 import { entriesToCSV, entriesToJSON } from '../utils/derive.js'
 import { encryptToEnvelope, decryptEnvelope, isEncryptedEnvelope } from '../utils/crypto.js'
 import { todayISO } from '../utils/date.js'
+import { cloudConfigured, getSessionUser, onAuthChange, signInWithEmail, signOut, fullSync } from '../cloud/sync.js'
 
 const ACCENTS = [
   { id: 'sage', label: 'Salbei', color: '#7d9b76' },
@@ -54,6 +55,44 @@ export function SettingsScreen({ theme, accent, onTheme, onAccent }) {
   function saveSmoke(key, value, setter) {
     setter(value)
     if (value !== '' && !Number.isNaN(value)) setSetting(key, value)
+  }
+
+  // Cloud-Sync-Zustand.
+  const [cloudUser, setCloudUser] = useState(null)
+  const [cloudEmail, setCloudEmail] = useState('')
+  const [cloudMsg, setCloudMsg] = useState(null)
+  const [syncing, setSyncing] = useState(false)
+  useEffect(() => {
+    if (!cloudConfigured) return
+    getSessionUser().then(setCloudUser)
+    return onAuthChange(setCloudUser)
+  }, [])
+
+  async function handleSignIn() {
+    if (!cloudEmail.includes('@')) {
+      setCloudMsg('Bitte eine gültige E-Mail eingeben.')
+      return
+    }
+    try {
+      await signInWithEmail(cloudEmail.trim())
+      setCloudMsg('Anmeldungslink gesendet. Schau in dein E-Mail-Postfach.')
+    } catch (err) {
+      setCloudMsg('Fehler: ' + err.message)
+    }
+  }
+
+  async function handleSync() {
+    setSyncing(true)
+    setCloudMsg(null)
+    try {
+      const r = await fullSync()
+      if (r.ok) setCloudMsg(`Synchronisiert: ${r.pulled} geladen, ${r.pushed} hochgeladen.`)
+      else setCloudMsg('Nicht angemeldet.')
+    } catch (err) {
+      setCloudMsg('Sync fehlgeschlagen: ' + err.message)
+    } finally {
+      setSyncing(false)
+    }
   }
 
   async function download(filename, text, type) {
@@ -299,6 +338,42 @@ export function SettingsScreen({ theme, accent, onTheme, onAccent }) {
             <span className="counter-unit">Stk.</span>
           </div>
         </div>
+      </section>
+
+      <section className="card">
+        <h2 className="card-title">Cloud-Sync</h2>
+        {!cloudConfigured ? (
+          <p className="card-intro">
+            Noch nicht eingerichtet. Sobald ein Supabase-Projekt hinterlegt ist (URL & Anon-Key als
+            Build-Variablen), kannst du dich hier anmelden und deine Tage geräteübergreifend synchronisieren.
+          </p>
+        ) : cloudUser ? (
+          <>
+            <p className="card-intro">Angemeldet als {cloudUser.email}. Deine Tage werden automatisch abgeglichen.</p>
+            <div className="btn-col">
+              <button className="btn" onClick={handleSync} disabled={syncing}>
+                {syncing ? 'Synchronisiere …' : 'Jetzt synchronisieren'}
+              </button>
+              <button className="btn btn-ghost" onClick={() => signOut()}>Abmelden</button>
+            </div>
+          </>
+        ) : (
+          <>
+            <p className="card-intro">Melde dich per E-Mail an (Magic-Link, kein Passwort). Nur du siehst deine Daten.</p>
+            <div className="btn-col">
+              <input
+                type="email"
+                className="text-input"
+                placeholder="deine@email.de"
+                autoComplete="email"
+                value={cloudEmail}
+                onChange={(e) => setCloudEmail(e.target.value)}
+              />
+              <button className="btn" onClick={handleSignIn}>Anmeldungslink senden</button>
+            </div>
+          </>
+        )}
+        {cloudMsg && <p className="import-msg">{cloudMsg}</p>}
       </section>
 
       <section className="card">

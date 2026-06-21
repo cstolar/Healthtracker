@@ -33,6 +33,9 @@ jobs:
           # Pfad muss exakt (case-sensitive!) zum Repo-Namen passen:
           # https://<user>.github.io/Healthtracker/
           BASE_PATH: /Healthtracker/
+          # Optional: Cloud-Sync. Als Repo-Secrets hinterlegen, sonst bleibt die App lokal.
+          VITE_SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          VITE_SUPABASE_ANON_KEY: ${{ secrets.SUPABASE_ANON_KEY }}
         run: npm run build
       - uses: actions/upload-pages-artifact@v3
         with:

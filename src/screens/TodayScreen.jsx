@@ -7,6 +7,7 @@ import { Illustration } from '../components/Illustration.jsx'
 import { themeFor, themeVars } from '../theme.js'
 import { greeting, relativeLabel, formatLong, todayISO, addDays, isFuture } from '../utils/date.js'
 import { noPornStreak, smokeFreeStreak, moneySaved } from '../utils/derive.js'
+import { pushEntry } from '../cloud/sync.js'
 
 // Eingabetypen mit eindeutigem Abschluss -> Auto-Advance nach Tap.
 const AUTO_ADVANCE = new Set(['scale', 'toggle', 'select'])
@@ -83,8 +84,24 @@ export function TodayScreen() {
 
   function scheduleSave() {
     if (saveTimer.current) clearTimeout(saveTimer.current)
-    saveTimer.current = setTimeout(() => saveEntry(dateRef.current, valuesRef.current), 300)
+    saveTimer.current = setTimeout(() => {
+      saveEntry(dateRef.current, valuesRef.current)
+      // In die Cloud spiegeln (no-op, wenn nicht angemeldet/konfiguriert).
+      pushEntry(dateRef.current, valuesRef.current).catch(() => {})
+    }, 300)
   }
+
+  // Nach einem Cloud-Pull den aktuell gezeigten Tag neu laden.
+  useEffect(() => {
+    function reload() {
+      getEntry(dateRef.current).then((e) => {
+        valuesRef.current = e.values || {}
+        setValues(e.values || {})
+      })
+    }
+    window.addEventListener('tagwerk-sync', reload)
+    return () => window.removeEventListener('tagwerk-sync', reload)
+  }, [])
 
   function setVal(fieldId, value) {
     setValues((prev) => {

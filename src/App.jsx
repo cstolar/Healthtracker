@@ -4,6 +4,7 @@ import { TodayScreen } from './screens/TodayScreen.jsx'
 import { TrendsScreen } from './screens/TrendsScreen.jsx'
 import { SettingsScreen, ACCENTS } from './screens/SettingsScreen.jsx'
 import { Illustration } from './components/Illustration.jsx'
+import { cloudConfigured, onAuthChange, fullSync } from './cloud/sync.js'
 
 const TABS = [
   { id: 'today', label: 'Heute', ill: 'today' },
@@ -40,6 +41,16 @@ export default function App() {
     const meta = document.querySelector('meta[name="theme-color"]')
     if (meta) meta.setAttribute('content', dark ? '#0e0e10' : '#faf9f7')
   }, [theme, accent, ready])
+
+  // Cloud-Sync: bei Start und nach Anmeldung im Hintergrund abgleichen.
+  useEffect(() => {
+    if (!cloudConfigured) return
+    fullSync().catch(() => {})
+    const off = onAuthChange((user) => {
+      if (user) fullSync().catch(() => {})
+    })
+    return off
+  }, [])
 
   function changeTheme(t) {
     setTheme(t)
