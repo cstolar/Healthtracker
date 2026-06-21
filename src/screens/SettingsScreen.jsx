@@ -109,8 +109,10 @@ export function SettingsScreen({ theme, accent, onTheme, onAccent }) {
     setCloudMsg(null)
     try {
       const r = await fullSync()
-      if (r.ok) setCloudMsg(`Synchronisiert: ${r.pulled} geladen, ${r.pushed} hochgeladen.`)
-      else setCloudMsg('Nicht angemeldet.')
+      if (r.ok) {
+        if (r.pulled === 0 && r.pushed === 0) setCloudMsg('Alles aktuell – nichts zu synchronisieren.')
+        else setCloudMsg(`Synchronisiert: ${r.pulled} geladen, ${r.pushed} hochgeladen.`)
+      } else setCloudMsg('Nicht angemeldet.')
     } catch (err) {
       setCloudMsg('Sync fehlgeschlagen: ' + err.message)
     } finally {
