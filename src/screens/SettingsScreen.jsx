@@ -3,7 +3,7 @@ import { getAllEntries, replaceAllEntries, getSetting, setSetting } from '../db.
 import { entriesToCSV, entriesToJSON } from '../utils/derive.js'
 import { encryptToEnvelope, decryptEnvelope, isEncryptedEnvelope } from '../utils/crypto.js'
 import { todayISO } from '../utils/date.js'
-import { cloudConfigured, getSessionUser, onAuthChange, signInWithEmail, verifyEmailCode, signOut, fullSync } from '../cloud/sync.js'
+import { cloudConfigured, getSessionUser, onAuthChange, signUpWithPassword, signInWithPassword, signOut, fullSync } from '../cloud/sync.js'
 
 const ACCENTS = [
   { id: 'sage', label: 'Salbei', color: '#7d9b76' },
@@ -60,8 +60,7 @@ export function SettingsScreen({ theme, accent, onTheme, onAccent }) {
   // Cloud-Sync-Zustand.
   const [cloudUser, setCloudUser] = useState(null)
   const [cloudEmail, setCloudEmail] = useState('')
-  const [cloudCode, setCloudCode] = useState('')
-  const [awaitingCode, setAwaitingCode] = useState(false)
+  const [cloudPassword, setCloudPassword] = useState('')
   const [cloudMsg, setCloudMsg] = useState(null)
   const [syncing, setSyncing] = useState(false)
   useEffect(() => {
@@ -70,28 +69,38 @@ export function SettingsScreen({ theme, accent, onTheme, onAccent }) {
     return onAuthChange(setCloudUser)
   }, [])
 
-  async function handleSignIn() {
+  function validCreds() {
     if (!cloudEmail.includes('@')) {
       setCloudMsg('Bitte eine gültige E-Mail eingeben.')
-      return
+      return false
     }
+    if (cloudPassword.length < 6) {
+      setCloudMsg('Passwort braucht mindestens 6 Zeichen.')
+      return false
+    }
+    return true
+  }
+
+  async function handleSignIn() {
+    if (!validCreds()) return
     try {
-      await signInWithEmail(cloudEmail.trim())
-      setAwaitingCode(true)
-      setCloudMsg('Code gesendet. Gib den 6-stelligen Code aus der E-Mail ein.')
+      await signInWithPassword(cloudEmail.trim(), cloudPassword)
+      setCloudPassword('')
+      setCloudMsg('Angemeldet. Deine Daten werden abgeglichen.')
     } catch (err) {
-      setCloudMsg('Fehler: ' + err.message)
+      setCloudMsg('Anmeldung fehlgeschlagen: ' + err.message)
     }
   }
 
-  async function handleVerify() {
+  async function handleSignUp() {
+    if (!validCreds()) return
     try {
-      await verifyEmailCode(cloudEmail.trim(), cloudCode.trim())
-      setAwaitingCode(false)
-      setCloudCode('')
-      setCloudMsg('Angemeldet. Deine Daten werden abgeglichen.')
+      const data = await signUpWithPassword(cloudEmail.trim(), cloudPassword)
+      setCloudPassword('')
+      if (data.session) setCloudMsg('Konto erstellt und angemeldet.')
+      else setCloudMsg('Konto erstellt. Falls keine Anmeldung erfolgt: in Supabase „Confirm email" deaktivieren.')
     } catch (err) {
-      setCloudMsg('Code ungültig oder abgelaufen: ' + err.message)
+      setCloudMsg('Registrierung fehlgeschlagen: ' + err.message)
     }
   }
 
@@ -373,7 +382,7 @@ export function SettingsScreen({ theme, accent, onTheme, onAccent }) {
           </>
         ) : (
           <>
-            <p className="card-intro">Melde dich per E-Mail an – du bekommst einen 6-stelligen Code. Nur du siehst deine Daten.</p>
+            <p className="card-intro">Melde dich mit E-Mail und Passwort an. Nur du siehst deine Daten. Beim ersten Mal „Konto erstellen".</p>
             <div className="btn-col">
               <input
                 type="email"
@@ -383,24 +392,17 @@ export function SettingsScreen({ theme, accent, onTheme, onAccent }) {
                 value={cloudEmail}
                 onChange={(e) => setCloudEmail(e.target.value)}
               />
-              <button className="btn" onClick={handleSignIn}>
-                {awaitingCode ? 'Code erneut senden' : 'Code anfordern'}
-              </button>
-              {awaitingCode && (
-                <>
-                  <input
-                    type="text"
-                    inputMode="numeric"
-                    autoComplete="one-time-code"
-                    className="text-input"
-                    placeholder="6-stelliger Code"
-                    value={cloudCode}
-                    onChange={(e) => setCloudCode(e.target.value)}
-                    onKeyDown={(e) => e.key === 'Enter' && handleVerify()}
-                  />
-                  <button className="btn" onClick={handleVerify}>Anmelden</button>
-                </>
-              )}
+              <input
+                type="password"
+                className="text-input"
+                placeholder="Passwort (min. 6 Zeichen)"
+                autoComplete="current-password"
+                value={cloudPassword}
+                onChange={(e) => setCloudPassword(e.target.value)}
+                onKeyDown={(e) => e.key === 'Enter' && handleSignIn()}
+              />
+              <button className="btn" onClick={handleSignIn}>Anmelden</button>
+              <button className="btn btn-ghost" onClick={handleSignUp}>Konto erstellen</button>
             </div>
           </>
         )}

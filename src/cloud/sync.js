@@ -18,20 +18,17 @@ export function onAuthChange(cb) {
   return () => data.subscription.unsubscribe()
 }
 
-// Anmeldung per E-Mail: sendet Magic-Link UND 6-stelligen Code (je nach
-// E-Mail-Vorlage). In der PWA verifizieren wir den Code direkt in der App.
-export async function signInWithEmail(email) {
+// E-Mail + Passwort – läuft komplett in der App (PWA-tauglich, ohne Link/Code).
+export async function signUpWithPassword(email, password) {
   if (!cloudConfigured) throw new Error('Cloud nicht konfiguriert.')
-  return supabase.auth.signInWithOtp({
-    email,
-    options: { shouldCreateUser: true, emailRedirectTo: window.location.href },
-  })
+  const { data, error } = await supabase.auth.signUp({ email, password })
+  if (error) throw error
+  return data
 }
 
-// 6-stelligen Code aus der E-Mail bestätigen (kein Link-Redirect nötig).
-export async function verifyEmailCode(email, token) {
+export async function signInWithPassword(email, password) {
   if (!cloudConfigured) throw new Error('Cloud nicht konfiguriert.')
-  const { data, error } = await supabase.auth.verifyOtp({ email, token, type: 'email' })
+  const { data, error } = await supabase.auth.signInWithPassword({ email, password })
   if (error) throw error
   return data
 }
