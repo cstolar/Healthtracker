@@ -3,7 +3,7 @@ import { getAllEntries, replaceAllEntries, getSetting, setSetting } from '../db.
 import { entriesToCSV, entriesToJSON } from '../utils/derive.js'
 import { encryptToEnvelope, decryptEnvelope, isEncryptedEnvelope } from '../utils/crypto.js'
 import { todayISO } from '../utils/date.js'
-import { cloudConfigured, getSessionUser, onAuthChange, signInWithEmail, signOut, fullSync } from '../cloud/sync.js'
+import { cloudConfigured, getSessionUser, onAuthChange, signInWithEmail, verifyEmailCode, signOut, fullSync } from '../cloud/sync.js'
 
 const ACCENTS = [
   { id: 'sage', label: 'Salbei', color: '#7d9b76' },
@@ -60,6 +60,8 @@ export function SettingsScreen({ theme, accent, onTheme, onAccent }) {
   // Cloud-Sync-Zustand.
   const [cloudUser, setCloudUser] = useState(null)
   const [cloudEmail, setCloudEmail] = useState('')
+  const [cloudCode, setCloudCode] = useState('')
+  const [awaitingCode, setAwaitingCode] = useState(false)
   const [cloudMsg, setCloudMsg] = useState(null)
   const [syncing, setSyncing] = useState(false)
   useEffect(() => {
@@ -75,9 +77,21 @@ export function SettingsScreen({ theme, accent, onTheme, onAccent }) {
     }
     try {
       await signInWithEmail(cloudEmail.trim())
-      setCloudMsg('Anmeldungslink gesendet. Schau in dein E-Mail-Postfach.')
+      setAwaitingCode(true)
+      setCloudMsg('Code gesendet. Gib den 6-stelligen Code aus der E-Mail ein.')
     } catch (err) {
       setCloudMsg('Fehler: ' + err.message)
+    }
+  }
+
+  async function handleVerify() {
+    try {
+      await verifyEmailCode(cloudEmail.trim(), cloudCode.trim())
+      setAwaitingCode(false)
+      setCloudCode('')
+      setCloudMsg('Angemeldet. Deine Daten werden abgeglichen.')
+    } catch (err) {
+      setCloudMsg('Code ungültig oder abgelaufen: ' + err.message)
     }
   }
 
@@ -359,7 +373,7 @@ export function SettingsScreen({ theme, accent, onTheme, onAccent }) {
           </>
         ) : (
           <>
-            <p className="card-intro">Melde dich per E-Mail an (Magic-Link, kein Passwort). Nur du siehst deine Daten.</p>
+            <p className="card-intro">Melde dich per E-Mail an – du bekommst einen 6-stelligen Code. Nur du siehst deine Daten.</p>
             <div className="btn-col">
               <input
                 type="email"
@@ -369,7 +383,24 @@ export function SettingsScreen({ theme, accent, onTheme, onAccent }) {
                 value={cloudEmail}
                 onChange={(e) => setCloudEmail(e.target.value)}
               />
-              <button className="btn" onClick={handleSignIn}>Anmeldungslink senden</button>
+              <button className="btn" onClick={handleSignIn}>
+                {awaitingCode ? 'Code erneut senden' : 'Code anfordern'}
+              </button>
+              {awaitingCode && (
+                <>
+                  <input
+                    type="text"
+                    inputMode="numeric"
+                    autoComplete="one-time-code"
+                    className="text-input"
+                    placeholder="6-stelliger Code"
+                    value={cloudCode}
+                    onChange={(e) => setCloudCode(e.target.value)}
+                    onKeyDown={(e) => e.key === 'Enter' && handleVerify()}
+                  />
+                  <button className="btn" onClick={handleVerify}>Anmelden</button>
+                </>
+              )}
             </div>
           </>
         )}
